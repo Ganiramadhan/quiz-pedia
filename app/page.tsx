@@ -2,17 +2,17 @@
 import { useState, useEffect } from "react";
 import { FaSpinner } from 'react-icons/fa';
 import Swal from 'sweetalert2';
-import Confetti from 'react-confetti'; 
+import Confetti from 'react-confetti';
 
 interface QuizQuestion {
   question: string;
   correct_answer: string;
   incorrect_answers: string[];
+  answers: string[];
 }
 
 export default function Home() {
   const [quizData, setQuizData] = useState<QuizQuestion[]>([]);
-  const [shuffledQuizData, setShuffledQuizData] = useState<QuizQuestion[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
@@ -25,8 +25,8 @@ export default function Home() {
       try {
         const res = await fetch('https://opentdb.com/api.php?amount=10&category=9&difficulty=medium&type=multiple');
         const data = await res.json();
-        setQuizData(data.results);
-        setShuffledQuizData(shuffleAnswers(data.results));
+        const processedData = shuffleAnswers(data.results);
+        setQuizData(processedData);
         setLoading(false);
       } catch (err) {
         setError("Failed to fetch quiz data");
@@ -37,7 +37,6 @@ export default function Home() {
     fetchQuizData();
   }, []);
 
-  // Shuffle jawaban hanya sekali di sini
   const shuffleAnswers = (data: QuizQuestion[]) => {
     return data.map((question) => ({
       ...question,
@@ -59,10 +58,6 @@ export default function Home() {
     if (currentQuestionIndex < quizData.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     }
-  };
-
-  const handlePreview = () => {
-    setCurrentQuestionIndex(0);
   };
 
   const handleSubmit = () => {
@@ -93,14 +88,14 @@ export default function Home() {
     setScore(0);
     setIsSubmitted(false);
     setSelectedAnswers([]);
-    setShuffledQuizData(shuffleAnswers(quizData)); 
+    setQuizData(shuffleAnswers(quizData));
   };
 
   if (loading) {
     return (
       <div className="p-6 flex justify-center items-center min-h-screen">
         <FaSpinner className="animate-spin text-blue-500 mx-auto" size={40} />
-        <p></p>
+        {/* <p>Loading...</p> */}
       </div>
     );
   }
@@ -109,13 +104,16 @@ export default function Home() {
     return <div className="p-6 text-center text-red-600">{error}</div>;
   }
 
-  const currentQuestion = shuffledQuizData[currentQuestionIndex];
+  const currentQuestion = quizData[currentQuestionIndex];
   const answers = currentQuestion.answers;
+
+  // Hitung progress berdasarkan soal yang sudah dijawab
+  const answeredQuestionsCount = selectedAnswers.filter(answer => answer !== undefined).length;
+  const progress = Math.round((answeredQuestionsCount / quizData.length) * 100);
 
   if (isSubmitted) {
     return (
       <div className="p-6 text-center">
-        {/* Animasi Petasan */}
         <Confetti />
         <h2 className="text-2xl font-bold">Quiz Results</h2>
         <p className="mt-4 text-lg">Your score: <span className="text-blue-600">{score} out of {quizData.length}</span></p>
@@ -148,7 +146,6 @@ export default function Home() {
 
   return (
     <div className="p-6 flex">
-      {/* Sidebar for question navigation */}
       <div className="w-1/4 pr-6">
         <h2 className="text-lg font-semibold mb-4">Questions</h2>
         <ul className="grid grid-cols-3 gap-2">
@@ -167,6 +164,15 @@ export default function Home() {
 
       <div className="w-3/4">
         <h1 className="text-xl font-bold text-center mb-6">English Quiz</h1>
+
+        {/* Progress Bar */}
+        <div className="w-full bg-gray-200 rounded-full h-4 mb-4">
+          <div
+            className="bg-blue-500 h-4 rounded-full"
+            style={{ width: `${progress}%` }}
+          ></div>
+        </div>
+
         <div className="p-4 border rounded-lg shadow-lg bg-white">
           <h2 className="text-lg font-semibold">
             Question {currentQuestionIndex + 1}: {currentQuestion.question}
