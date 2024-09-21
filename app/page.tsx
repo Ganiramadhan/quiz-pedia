@@ -7,8 +7,6 @@ import Question from '@/components/quiz/Question';
 import QuestionList from '@/components/quiz/QuestionList';
 import Results from '@/components/quiz/Result';
 
-const API_KEY = process.env.NEXT_PUBLIC_QUIZ_API_KEY;
-
 interface QuizQuestion {
   question: string;
   correct_answer: string;
@@ -19,7 +17,6 @@ interface QuizQuestion {
 export default function Home() {
   const [quizData, setQuizData] = useState<QuizQuestion[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
   const [selectedAnswers, setSelectedAnswers] = useState<string[]>([]);
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
@@ -28,34 +25,35 @@ export default function Home() {
   useEffect(() => {
     const fetchQuizData = async () => {
       try {
-        const res = await fetch(`https://quizapi.io/api/v1/questions?apiKey=${API_KEY}&category=linux&limit=10`);
+        const res = await fetch('/api/quiz');
+        if (!res.ok) {
+          throw new Error('Failed to fetch quiz data');
+        }
         const data = await res.json();
 
         const processedData: QuizQuestion[] = data.map((question: any) => {
           const correctAnswerKey = Object.keys(question.correct_answers).find(
-            (key) => question.correct_answers[key as keyof typeof question.correct_answers] === 'true'
+            (key) => question.correct_answers[key] === 'true'
           );
-        
+
           const correctAnswer = correctAnswerKey
-            ? question.answers[correctAnswerKey.replace('_correct', '') as keyof typeof question.answers]
-            : null;
-        
+            ? question.answers[correctAnswerKey.replace('_correct', '')]
+            : "";
+
           const answersArray = Object.values(question.answers).filter((answer) => answer !== null) as string[];
-        
+
           return {
             question: question.question,
-            correct_answer: correctAnswer ?? "",
-            incorrect_answers: answersArray.filter(
-              (answer) => answer !== correctAnswer
-            ),
+            correct_answer: correctAnswer,
+            incorrect_answers: answersArray.filter((answer) => answer !== correctAnswer),
             answers: shuffleAnswers(answersArray),
           };
         });
 
         setQuizData(processedData);
-        setLoading(false);
       } catch (err) {
-        setError("Failed to fetch quiz data");
+        console.error(err); // Tampilkan error di konsol
+      } finally {
         setLoading(false);
       }
     };
@@ -69,7 +67,13 @@ export default function Home() {
 
   const handleAnswerSelect = (answer: string) => {
     const updatedAnswers = [...selectedAnswers];
-    updatedAnswers[currentQuestionIndex] = answer;
+    if (updatedAnswers[currentQuestionIndex] === answer) {
+      // Jika jawaban yang sama diklik, batalkan pilihan
+      updatedAnswers[currentQuestionIndex] = '';
+    } else {
+      // Pilih jawaban yang baru
+      updatedAnswers[currentQuestionIndex] = answer;
+    }
     setSelectedAnswers(updatedAnswers);
   };
 
@@ -119,10 +123,6 @@ export default function Home() {
         <FaSpinner className="animate-spin text-blue-500 mx-auto" size={40} />
       </div>
     );
-  }
-
-  if (error) {
-    return <div className="p-6 text-center text-red-600">{error}</div>;
   }
 
   const currentQuestion = quizData[currentQuestionIndex];
