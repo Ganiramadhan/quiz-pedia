@@ -2,7 +2,8 @@
 import { NextResponse } from 'next/server';
 import axios from 'axios';
 
-const API_KEY = process.env.NEXT_PUBLIC_QUIZ_API_KEY;
+// const API_KEY = process.env.NEXT_PUBLIC_QUIZ_API_KEY;
+const API_KEY = 'TB9n4wDPPf5ye2doGgEoZMyJObcMuM2sJROlH1Wg';
 
 export async function GET() {
     try {

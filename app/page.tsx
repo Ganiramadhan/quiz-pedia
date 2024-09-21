@@ -21,6 +21,8 @@ export default function Home() {
   const [selectedAnswers, setSelectedAnswers] = useState<string[]>([]);
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
   const [score, setScore] = useState<number>(0);
+  const [userName, setUserName] = useState<string>(''); 
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(true); 
 
   useEffect(() => {
     const fetchQuizData = async () => {
@@ -52,7 +54,7 @@ export default function Home() {
 
         setQuizData(processedData);
       } catch (err) {
-        console.error(err); // Tampilkan error di konsol
+        console.error(err);
       } finally {
         setLoading(false);
       }
@@ -67,13 +69,7 @@ export default function Home() {
 
   const handleAnswerSelect = (answer: string) => {
     const updatedAnswers = [...selectedAnswers];
-    if (updatedAnswers[currentQuestionIndex] === answer) {
-      // Jika jawaban yang sama diklik, batalkan pilihan
-      updatedAnswers[currentQuestionIndex] = '';
-    } else {
-      // Pilih jawaban yang baru
-      updatedAnswers[currentQuestionIndex] = answer;
-    }
+    updatedAnswers[currentQuestionIndex] = updatedAnswers[currentQuestionIndex] === answer ? '' : answer;
     setSelectedAnswers(updatedAnswers);
   };
 
@@ -117,6 +113,14 @@ export default function Home() {
     setSelectedAnswers([]);
   };
 
+  const handleStartQuiz = () => {
+    if (userName.trim()) {
+      setIsModalOpen(false);
+    } else {
+      Swal.fire('Please enter your name. :)');
+    }
+  };
+
   if (loading) {
     return (
       <div className="p-6 flex justify-center items-center min-h-screen">
@@ -132,53 +136,80 @@ export default function Home() {
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold text-center mb-4">Linux Quiz</h1>
-      {!isSubmitted ? (
-        <>
-          <ProgressBar progress={progress} />
-          <div className="flex flex-col lg:flex-row lg:space-x-4">
-            <div className="flex-1">
-              <Question
-                question={currentQuestion.question}
-                answers={answers}
-                selectedAnswer={selectedAnswers[currentQuestionIndex]}
-                onAnswerSelect={handleAnswerSelect}
-              />
-              <div className="flex justify-between mt-4">
-                {currentQuestionIndex < quizData.length - 1 && (
-                  <button
-                    onClick={handleNextQuestion}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition"
-                  >
-                    Next
-                  </button>
-                )}
-                {currentQuestionIndex === quizData.length - 1 && (
-                  <button
-                    onClick={handleSubmit}
-                    className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition"
-                  >
-                    Submit
-                  </button>
-                )}
-              </div>
-            </div>
-            <div className="w-full lg:w-1/4">
-              <QuestionList
-                quizData={quizData}
-                selectedAnswers={selectedAnswers}
-                onQuestionClick={handleQuestionClick}
-              />
-            </div>
+      {isModalOpen && (
+        <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <h2 className="text-xl font-bold mb-4">Welcome to Quiz Pedia</h2>
+            <input
+              type="text"
+              value={userName}
+              onChange={(e) => setUserName(e.target.value)}
+              placeholder="Enter your name"
+              className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+            />
+            <button
+              onClick={handleStartQuiz}
+              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition"
+            >
+              Start Quiz
+            </button>
           </div>
+        </div>
+      )}
+
+      {!isModalOpen && (
+        <>
+          <h1 className="text-2xl font-bold text-center mb-4">Welcome, {userName}!</h1>
+          {!isSubmitted ? (
+            <>
+              <ProgressBar progress={progress} />
+              <div className="flex flex-col lg:flex-row lg:space-x-4">
+                <div className="flex-1">
+                  <Question
+                    questionNumber={currentQuestionIndex + 1}
+                    question={currentQuestion.question}
+                    answers={answers}
+                    selectedAnswer={selectedAnswers[currentQuestionIndex]}
+                    onAnswerSelect={handleAnswerSelect}
+                  />
+                  <div className="flex justify-between mt-4 mb-4">
+                    {currentQuestionIndex < quizData.length - 1 && (
+                      <button
+                        onClick={handleNextQuestion}
+                        className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition"
+                      >
+                        Next
+                      </button>
+                    )}
+                    {currentQuestionIndex === quizData.length - 1 && (
+                      <button
+                        onClick={handleSubmit}
+                        className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition"
+                      >
+                        Submit
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div className="w-full lg:w-1/4">
+                  <QuestionList
+                    quizData={quizData}
+                    selectedAnswers={selectedAnswers}
+                    onQuestionClick={handleQuestionClick}
+                  />
+                </div>
+              </div>
+            </>
+          ) : (
+            <Results
+              quizData={quizData}
+              selectedAnswers={selectedAnswers}
+              score={score}
+              userName={userName}
+              onRestartQuiz={handleRestartQuiz}
+            />
+          )}
         </>
-      ) : (
-        <Results
-          quizData={quizData}
-          selectedAnswers={selectedAnswers}
-          score={score}
-          onRestartQuiz={handleRestartQuiz}
-        />
       )}
     </div>
   );
