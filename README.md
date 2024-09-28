@@ -5,7 +5,8 @@
 git clone <repository-url>
 cd <repository-directory>
 
-install node modules
+# install node modules
+npm install 
 
 npm run dev
 # or
