@@ -38,6 +38,6 @@ To clone and run this project locally, follow the steps below:
    npm or yarn run dev
    ```
    
-Your application should now be running at http://localhost:3000. Open this URL in your browser to see your project in action!
+Your application should now be running at http://localhost:3000. Open this URL in your browser to see your project.
 
 
